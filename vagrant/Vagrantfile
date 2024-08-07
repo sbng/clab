@@ -43,7 +43,7 @@ Vagrant.configure("2") do |config|
       #domain.storage :file, :size => '5G', :type => 'raw', :allow_existing => true
       #domain.storage :file, :device => 'cdrom', :path => '/mnt/linux.iso'
       domain.graphics_type = 'none'
-      #domain.graphics_port = 5901
+      domain.graphics_port = 5900
       #domain.graphics_ip = '0.0.0.0'
     end
 
