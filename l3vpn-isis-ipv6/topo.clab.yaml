@@ -1,0 +1,62 @@
+name: lab 
+
+topology:
+  defaults:
+    binds:
+      - scripts/docker-start:/usr/lib/frr/docker-start
+      - scripts/start.sh:/start.sh
+      - config:/tmp/config
+    exec:
+      - "/start.sh"
+  kinds:
+    linux:
+      image: seoboon/frr:10.2
+      env:
+        PROTO: "bgpd ospfd bfdd isisd ldpd vtysh"
+  nodes:
+    c1:
+      kind: linux
+      labels:
+        role: core
+    c2:
+      kind: linux
+      labels:
+        role: core
+    c3:
+      kind: linux
+      labels:
+        role: core
+    pe1:
+      kind: linux
+      labels:
+        role: pe 
+    pe2:
+      kind: linux
+      labels:
+        role: pe 
+    ce1-blue:
+      kind: linux
+      labels:
+        role: ce 
+    ce2-blue:
+      kind: linux
+      labels:
+        role: ce 
+    ce1-red:
+      kind: linux
+      labels:
+        role: ce 
+    ce2-red:
+      kind: linux
+      labels:
+        role: ce 
+  links:
+    - endpoints: ["c1:pe1", "pe1:c1"]
+    - endpoints: ["c1:c3", "c3:c1"]
+    - endpoints: ["c3:pe2", "pe2:c3"]
+    - endpoints: ["c2:pe2", "pe2:c2"]
+    - endpoints: ["c2:pe1", "pe1:c2"]
+    - endpoints: ["pe1:ce1-vrf-blue", "ce1-blue:pe1"]
+    - endpoints: ["pe2:ce2-vrf-blue", "ce2-blue:pe2"]
+    - endpoints: ["pe1:ce1-vrf-red", "ce1-red:pe1"]
+    - endpoints: [ "pe2:ce2-vrf-red", "ce2-red:pe2"]

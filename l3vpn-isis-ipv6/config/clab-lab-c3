@@ -1,0 +1,42 @@
+frr version 10.2-dev_git
+frr defaults traditional
+hostname c3
+!
+vrf mgmt
+exit-vrf
+!
+interface c1
+ description connect to clab-lab-c3->c1
+ ipv6 router isis SRv6
+ isis circuit-type level-2-only
+ isis network point-to-point
+ mpls enable
+exit
+!
+interface lo
+ description Loopback for clab-lab-c3
+ ip address 10.10.10.3/32
+ ipv6 address 2001:db8::3/128
+ ipv6 router isis SRv6
+ isis circuit-type level-2-only
+ mpls enable
+exit
+!
+interface pe2
+ description connect to clab-lab-c3->pe2
+ ipv6 router isis SRv6
+ isis circuit-type level-2-only
+ isis network point-to-point
+ mpls enable
+exit
+!
+router isis SRv6
+ is-type level-2-only
+ net 49.0001.0001.0001.2003.00
+ lsp-mtu 1300
+ topology ipv6-unicast
+ segment-routing on
+ segment-routing node-msd 8
+ segment-routing prefix 2001:db8::3/128 index 33
+exit
+!

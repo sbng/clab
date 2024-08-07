@@ -1,0 +1,141 @@
+frr version 10.2-dev_git
+frr defaults traditional
+hostname pe2
+!
+vrf mgmt
+exit-vrf
+!
+vrf blue
+exit-vrf
+!
+vrf red
+exit-vrf
+!
+interface c2
+ description connect to clab-lab-pe2->c2
+ ipv6 router isis SRv6
+ isis circuit-type level-2-only
+ isis network point-to-point
+exit
+!
+interface c3
+ description connect to clab-lab-pe2->c3
+ ipv6 router isis SRv6
+ isis circuit-type level-2-only
+ isis network point-to-point
+exit
+!
+interface ce2-vrf-blue
+ description connect to clab-lab-pe2->ce2-vrf-blue
+ ip address 192.168.1.243/31
+exit
+!
+interface ce2-vrf-red
+ description connect to clab-lab-pe2->ce2-vrf-red
+ ip address 192.168.1.239/31
+exit
+!
+interface lo
+ description Loopback for clab-lab-pe2
+ ip address 10.10.10.4/32
+ ipv6 address 2001:db8:4::/128
+ ipv6 router isis SRv6
+ isis circuit-type level-2-only
+ isis passive
+exit
+!
+interface sr0
+ description SRV6 annoucement into igp
+ ipv6 address 2001:db8:4::1/64
+ ipv6 router isis SRv6
+ isis circuit-type level-2-only
+ isis passive
+exit
+!
+router bgp 100
+ bgp router-id 10.10.10.4
+ no bgp ebgp-requires-policy
+ no bgp default ipv4-unicast
+ neighbor 2001:db8:2:: remote-as 100
+ neighbor 2001:db8:2:: update-source lo
+ neighbor 2001:db8:2:: capability extended-nexthop
+ !
+ segment-routing srv6
+  locator srv6_loc
+ exit
+ !
+ address-family ipv4 vpn
+  neighbor 2001:db8:2:: activate
+  neighbor 2001:db8:2:: next-hop-self
+ exit-address-family
+ !
+ address-family ipv6 unicast
+  network 2001:db8:4::/128
+  aggregate-address 2001:db8:4::/64 summary-only
+  neighbor 2001:db8:2:: activate
+ exit-address-family
+exit
+!
+router bgp 100 vrf blue
+ bgp router-id 10.10.10.4
+ no bgp ebgp-requires-policy
+ no bgp default ipv4-unicast
+ neighbor 192.168.1.242 remote-as 202
+ !
+ address-family ipv4 unicast
+  redistribute connected
+  neighbor 192.168.1.242 activate
+  sid vpn export auto
+  rd vpn export 65000:202
+  rt vpn both 65000:2
+  export vpn
+  import vpn
+ exit-address-family
+exit
+!
+router bgp 100 vrf red
+ bgp router-id 10.10.10.4
+ no bgp ebgp-requires-policy
+ no bgp default ipv4-unicast
+ neighbor 192.168.1.238 remote-as 302
+ !
+ address-family ipv4 unicast
+  redistribute connected
+  neighbor 192.168.1.238 activate
+  sid vpn export auto
+  rd vpn export 65000:302
+  rt vpn both 65000:3
+  export vpn
+  import vpn
+ exit-address-family
+exit
+!
+router isis SRv6
+ is-type level-2-only
+ net 49.0001.0001.0001.2004.00
+ lsp-mtu 1300
+ topology ipv6-unicast
+exit
+!
+segment-routing
+ srv6
+  locators
+   locator srv6_loc
+    prefix 2001:db8:4::/64 block-len 40 node-len 24 func-bits 16
+   exit
+   !
+  exit
+  !
+  formats
+   format usid-f3216
+   exit
+   !
+   format uncompressed-f4024
+   exit
+   !
+  exit
+  !
+ exit
+ !
+exit
+!

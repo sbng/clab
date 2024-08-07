@@ -1,0 +1,27 @@
+frr version 10.2-dev_git
+frr defaults traditional
+hostname ce2-red
+!
+vrf mgmt
+exit-vrf
+!
+interface lo
+ description Loopback for clab-lab-ce2-red
+ ip address 10.10.10.9/32
+exit
+!
+interface pe2
+ description connect to clab-lab-ce2-red->pe2
+ ip address 192.168.1.238/31
+exit
+!
+router bgp 302
+ bgp router-id 10.10.10.9
+ no bgp ebgp-requires-policy
+ neighbor 192.168.1.239 remote-as 100
+ !
+ address-family ipv4 unicast
+  network 10.10.10.9/32
+ exit-address-family
+exit
+!

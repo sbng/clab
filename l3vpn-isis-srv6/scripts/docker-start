@@ -1,0 +1,62 @@
+#!/bin/bash
+
+ADDR=$(ip -4 a show dev eth0 | grep inet | awk '{print $2}' | cut -d "/" -f 1)
+cp /tmp/config/clab-lab-`hostname` /etc/frr/frr.conf 
+
+ulimit -n 10000
+sysctl -w net.ipv6.conf.all.forwarding=1
+sysctl -w net.mpls.platform_labels=104857
+sysctl -w net.ipv4.tcp_l3mdev_accept=1
+sysctl -w net.ipv4.udp_l3mdev_accept=1
+sysctl -w net.ipv4.raw_l3mdev_accept=0
+sysctl -w net.mpls.platform_labels=104857
+sysctl -w net.vrf.strict_mode=1
+sysctl -w net.ipv4.conf.all.rp_filter=0
+sysctl -w net.ipv6.seg6_flowlabel=1
+sysctl -w net.ipv6.conf.all.seg6_enabled=1
+
+touch /etc/frr/vtysh.conf
+
+if [ -r "/lib/lsb/init-functions" ]; then
+        . /lib/lsb/init-functions
+else
+        log_success_msg() {
+                echo "$@"
+        }
+        log_warning_msg() {
+                echo "$@" >&2
+        }
+        log_failure_msg() {
+                echo "$@" >&2
+        }
+fi
+
+# isolate and setup management vrf
+ip link add mgmt type vrf table 100
+ip link set mgmt up
+ip link set dev eth0 vrf mgmt
+ip link set dev eth0 up
+ip route add table 100 unreachable default metric 4278198272
+ip route add table 100 default via 172.20.20.1
+#sed -i 's/nameserver 127.0.0.11/nameserver 9.9.9.9/' /etc/resolv.conf
+
+# dummy interface for SRV6 locator annoucement
+ip link add sr0 type dummy
+ip link set sr0 up
+
+# change motd
+echo "Free range routing (FRR)" > /etc/motd
+
+# start routing process
+for i in $PROTO;do echo "${i}=yes";done > /etc/frr/daemons
+
+# create dropbear directory
+mkdir /etc/dropbear
+
+# start ssh in vrf mgmt
+ip vrf exec mgmt /usr/sbin/dropbear -RFEBwgjk -G frr -p 22 &
+#/usr/sbin/dropbear -RFEBwgjk -G frr -p 22 &
+
+/usr/lib/frr/frr_exporter &
+source /usr/lib/frr/frrcommon.sh
+/usr/lib/frr/watchfrr --limit-fds 90000 $(daemon_list)

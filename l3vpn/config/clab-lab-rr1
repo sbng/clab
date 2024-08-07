@@ -1,0 +1,73 @@
+frr version 10.2-dev_git
+frr defaults traditional
+hostname rr1
+no ipv6 forwarding
+!
+vrf mgmt
+exit-vrf
+!
+interface lo
+ description Loopback for clab-lab-rr1
+ ip address 10.10.10.1/32
+ ip ospf area 0
+ mpls enable
+exit
+!
+interface pe1
+ description connect to clab-lab-rr1->pe1
+ ip address 192.168.31.255/31
+ ip ospf area 0
+ ip ospf network point-to-point
+ mpls enable
+exit
+!
+interface pe2
+ description connect to clab-lab-rr1->pe2
+ ip address 192.168.31.253/31
+ ip ospf area 0
+ ip ospf network point-to-point
+ mpls enable
+exit
+!
+router bgp 100
+ neighbor 10.10.10.2 remote-as 100
+ neighbor 10.10.10.2 update-source lo
+ neighbor 10.10.10.3 remote-as 100
+ neighbor 10.10.10.3 update-source lo
+ neighbor 10.10.10.4 remote-as 100
+ neighbor 10.10.10.4 update-source lo
+ !
+ address-family ipv4 vpn
+  neighbor 10.10.10.2 activate
+  neighbor 10.10.10.2 next-hop-self
+  neighbor 10.10.10.3 activate
+  neighbor 10.10.10.3 next-hop-self
+  neighbor 10.10.10.4 activate
+  neighbor 10.10.10.4 next-hop-self
+ exit-address-family
+exit
+!
+router ospf
+ log-adjacency-changes
+exit
+!
+mpls ldp
+ router-id 10.10.10.1
+ !
+ address-family ipv4
+  discovery transport-address 10.10.10.1
+  label local advertise explicit-null
+  !
+  interface lo
+  exit
+  !
+  interface pe1
+  exit
+  !
+  interface pe2
+  exit
+  !
+ exit-address-family
+ !
+exit
+!

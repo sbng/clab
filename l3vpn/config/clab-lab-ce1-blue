@@ -1,0 +1,27 @@
+frr version 10.2-dev_git
+frr defaults traditional
+hostname ce1-blue
+no ipv6 forwarding
+!
+vrf mgmt
+exit-vrf
+!
+interface lo
+ description Loopback for clab-lab-ce1-blue
+ ip address 10.10.10.5/32
+exit
+!
+interface pe1
+ description connect to clab-lab-ce1-blue->pe1
+ ip address 192.168.31.246/31
+exit
+!
+router bgp 20
+ no bgp ebgp-requires-policy
+ neighbor 192.168.31.247 remote-as 100
+ !
+ address-family ipv4 unicast
+  redistribute connected
+ exit-address-family
+exit
+!
